@@ -1,20 +1,23 @@
 const webpack = require("webpack");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 const root = require("./helpers").root;
 const VERSION = JSON.stringify(require("../package.json").version);
 
-module.exports = function(_, { mode }) {
-  return {
+module.exports = {
+    mode: "development",
     performance: {
       hints: false
+    },
+    node: {
+      fs: 'empty'
     },
     resolve: {
       extensions: [".ts", ".tsx", ".mjs", ".js", ".json", ".css", ".svg"]
     },
-    entry: ["./src/visualizer/polyfills.ts", "./index.js"],
+    entry: ["./src/visualizer/polyfills.ts", "./src/index.js"],
     devServer: {
       contentBase: root("demo"),
       watchContentBase: true,
@@ -22,14 +25,14 @@ module.exports = function(_, { mode }) {
       stats: "errors-only"
     },
     output: {
-      path: root("demo-dist"),
-      filename: "[name].js",
+      path: root("build"),
+      filename: "bundle.js",
       sourceMapFilename: "[name].[id].map"
     },
     module: {
       rules: [
         {
-          test: /\.(js|js\.flow)$/,
+          test: /\.(jsx|js|js\.flow)$/,
           use: {
             loader: "babel-loader",
             options: {
@@ -51,7 +54,7 @@ module.exports = function(_, { mode }) {
         {
           test: /\.tsx?$/,
           use: "ts-loader",
-          exclude: [/\.(spec|e2e)\.ts$/]
+          exclude: [/\.(spec|e2e)\.ts$/, /node_modules/]
         },
 
         {
@@ -67,9 +70,9 @@ module.exports = function(_, { mode }) {
         {
           test: /src\/visualizer\/.*\.css$/,
           exclude: /variables\.css$/,
-          use: ExtractTextPlugin.extract({
-            fallback: "style-loader",
+
             use: [
+              MiniCssExtractPlugin.loader,
               {
                 loader: "css-loader",
                 options: {
@@ -78,16 +81,14 @@ module.exports = function(_, { mode }) {
               },
               "postcss-loader"
             ]
-          })
         },
         {
           test: /css\/.*\.css$/,
-          use: ExtractTextPlugin.extract({
-            fallback: "style-loader",
-            use: {
-              loader:"postcss-loader"
-            }
-          })
+          use: [
+            MiniCssExtractPlugin.loader,
+            "css-loader",
+            "postcss-loader"
+          ]
         }
         ,
         {
@@ -138,7 +139,7 @@ module.exports = function(_, { mode }) {
         template: "./index.html"
       }),
 
-      new ExtractTextPlugin({
+      new MiniCssExtractPlugin({
         filename: "[name].[hash].css"
       }),
 
@@ -148,4 +149,4 @@ module.exports = function(_, { mode }) {
       ])
     ]
   };
-};
+;
